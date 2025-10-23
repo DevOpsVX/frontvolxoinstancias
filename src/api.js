@@ -1,6 +1,56 @@
+// Utility functions for interacting with the backend API. The API and WebSocket
+// base URLs are provided via environment variables at build time. See the
+// Render docs for configuring environment variables for static sites.
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000'
-export async function listInstances(){ const r = await fetch(`${API_URL}/api/instances`); return r.json() }
-export async function startInstance(instance_name){ const r = await fetch(`${API_URL}/api/instances`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ instance_name }) }); return r.json() }
-export async function deleteInstance(id){ const r = await fetch(`${API_URL}/api/instances/${id}`, { method:'DELETE' }); return r.json() }
-export function buildGhlAuthUrlFromBackend(_id, authUrl){ return authUrl }
+const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '';
+const WS_URL = import.meta.env.VITE_WS_URL?.replace(/\/$/, '') || '';
+
+export async function listInstances() {
+  const res = await fetch(`${API_URL}/api/instances`);
+  if (!res.ok) {
+    throw new Error('Failed to list instances');
+  }
+  return res.json();
+}
+
+export async function startInstance(name) {
+  const res = await fetch(`${API_URL}/api/instances`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to start instance: ${text}`);
+  }
+  return res.json();
+}
+
+export async function deleteInstance(id) {
+  const res = await fetch(`${API_URL}/api/instances/${id}`, { method: 'DELETE' });
+  if (!res.ok) {
+    throw new Error('Failed to delete instance');
+  }
+  return res.json();
+}
+
+/**
+ * Open a WebSocket to receive QR codes and status updates for an instance.
+ * The callback receives parsed messages of the form { type, data }.
+ *
+ * @param {string} instanceId
+ * @param {(msg: { type: string, data: any }) => void} onMessage
+ * @returns {WebSocket}
+ */
+export function connectSocket(instanceId, onMessage) {
+  const ws = new WebSocket(`${WS_URL}/ws/${instanceId}`);
+  ws.onmessage = (event) => {
+    try {
+      const message = JSON.parse(event.data);
+      onMessage(message);
+    } catch {
+      // ignore malformed messages
+    }
+  };
+  return ws;
+}

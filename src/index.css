@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Override global font for the application. The default sans-serif font is
+   replaced with Inter where available; fallback to system font otherwise. */
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Custom muted text color. Used throughout the UI for secondary information. */
+.text-muted {
+  color: theme('colors.muted');
+}
