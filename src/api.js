@@ -51,15 +51,35 @@ export async function deleteInstance(id) {
  * @returns {WebSocket}
  */
 export function connectSocket(instanceId, onMessage) {
-  const ws = new WebSocket(`${WS_URL}/ws/${instanceId}`);
+  const wsUrl = `${WS_URL}/ws/${instanceId}`;
+  console.log('[WS] Conectando ao WebSocket:', wsUrl);
+  console.log('[WS] Instance ID:', instanceId);
+  
+  const ws = new WebSocket(wsUrl);
+  
+  ws.onopen = () => {
+    console.log('[WS] Conexão WebSocket aberta!');
+  };
+  
   ws.onmessage = (event) => {
+    console.log('[WS] Mensagem recebida:', event.data);
     try {
       const message = JSON.parse(event.data);
+      console.log('[WS] Mensagem parseada:', message);
       onMessage(message);
-    } catch {
-      // ignore malformed messages
+    } catch (err) {
+      console.error('[WS] Erro ao parsear mensagem:', err);
     }
   };
+  
+  ws.onerror = (error) => {
+    console.error('[WS] Erro no WebSocket:', error);
+  };
+  
+  ws.onclose = (event) => {
+    console.log('[WS] WebSocket fechado:', event.code, event.reason);
+  };
+  
   return ws;
 }
 

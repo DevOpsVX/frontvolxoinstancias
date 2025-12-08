@@ -38,11 +38,14 @@ export default function Instance() {
 
     // Open WebSocket connection to receive QR and status messages.
     const ws = connectSocket(id, (msg) => {
+      console.log('[Instance] Mensagem recebida do WebSocket:', msg);
       if (msg.type === 'qr') {
+        console.log('[Instance] QR Code recebido! Length:', msg.data?.length);
         setQr(msg.data);
         setConnectionAttempts((prev) => prev + 1);
         setIsConnecting(false);
       } else if (msg.type === 'status') {
+        console.log('[Instance] Status atualizado:', msg.data);
         if (msg.data === 'connected') {
           setStatus('connected');
           setIsConnecting(false);
