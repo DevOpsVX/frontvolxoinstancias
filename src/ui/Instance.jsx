@@ -93,11 +93,50 @@ export default function Instance() {
   }
 
   function handleStartConnection() {
-    if (!wsConnection) {
-      alert('WebSocket não conectado. Recarregue a página.');
+    console.log('[handleStartConnection] Verificando WebSocket...');
+    console.log('[handleStartConnection] wsConnection:', wsConnection);
+    console.log('[handleStartConnection] readyState:', wsConnection?.readyState);
+    
+    // Verifica se WebSocket está conectado (readyState 1 = OPEN)
+    if (!wsConnection || wsConnection.readyState !== 1) {
+      console.log('[handleStartConnection] WebSocket não está aberto, reconectando...');
+      alert('Reconectando... Aguarde e tente novamente em 2 segundos.');
+      
+      // Fecha conexão antiga se existir
+      if (wsConnection) {
+        wsConnection.close();
+      }
+      
+      // Cria nova conexão
+      const newWs = connectSocket(id, (msg) => {
+        console.log('[Instance] Mensagem recebida do WebSocket:', msg);
+        if (msg.type === 'qr') {
+          console.log('[Instance] QR Code recebido! Length:', msg.data?.length);
+          setQr(msg.data);
+          setConnectionAttempts((prev) => prev + 1);
+          setIsConnecting(false);
+        } else if (msg.type === 'status') {
+          console.log('[Instance] Status atualizado:', msg.data);
+          if (msg.data === 'connected') {
+            setStatus('connected');
+            setIsConnecting(false);
+            fetchInstance();
+          } else if (msg.data === 'connecting') {
+            setStatus('connecting');
+          } else if (msg.data === 'disconnected') {
+            setStatus('disconnected');
+          }
+        } else if (msg.type === 'error') {
+          console.error('WebSocket error:', msg.data);
+          setIsConnecting(false);
+          alert(msg.data);
+        }
+      });
+      setWsConnection(newWs);
       return;
     }
     
+    console.log('[handleStartConnection] WebSocket OK, enviando comando start...');
     setIsConnecting(true);
     setQr(null);
     
