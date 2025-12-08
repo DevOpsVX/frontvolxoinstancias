@@ -10,7 +10,15 @@ export async function listInstances() {
   if (!res.ok) {
     throw new Error('Failed to list instances');
   }
-  return res.json();
+  const json = await res.json();
+  // Normaliza os dados para garantir que instanceId existe
+  if (json.data) {
+    json.data = json.data.map(item => ({
+      ...item,
+      instanceId: item.instance_id || item.instanceId
+    }));
+  }
+  return json;
 }
 
 export async function startInstance(name) {
