@@ -16,6 +16,8 @@ export default function Instance() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState('');
   const [showManageMenu, setShowManageMenu] = useState(false);
+  const [wsConnection, setWsConnection] = useState(null);
+  const [isConnecting, setIsConnecting] = useState(false);
 
   useEffect(() => {
     // Fetch the instance info from the backend to display its name and
@@ -39,12 +41,24 @@ export default function Instance() {
       if (msg.type === 'qr') {
         setQr(msg.data);
         setConnectionAttempts((prev) => prev + 1);
-      } else if (msg.type === 'status' && msg.data === 'connected') {
-        setStatus('connected');
-        // Optionally refetch to update phone number
-        fetchInstance();
+        setIsConnecting(false);
+      } else if (msg.type === 'status') {
+        if (msg.data === 'connected') {
+          setStatus('connected');
+          setIsConnecting(false);
+          fetchInstance();
+        } else if (msg.data === 'connecting') {
+          setStatus('connecting');
+        } else if (msg.data === 'disconnected') {
+          setStatus('disconnected');
+        }
+      } else if (msg.type === 'error') {
+        console.error('WebSocket error:', msg.data);
+        setIsConnecting(false);
+        alert(msg.data);
       }
     });
+    setWsConnection(ws);
     return () => {
       ws.close();
     };
@@ -73,6 +87,19 @@ export default function Instance() {
       console.error(err);
       alert('Erro ao desconectar');
     }
+  }
+
+  function handleStartConnection() {
+    if (!wsConnection) {
+      alert('WebSocket não conectado. Recarregue a página.');
+      return;
+    }
+    
+    setIsConnecting(true);
+    setQr(null);
+    
+    // Envia comando para iniciar sessão
+    wsConnection.send(JSON.stringify({ type: 'start' }));
   }
 
   async function handleReconnect() {
@@ -308,6 +335,35 @@ export default function Instance() {
                       Tentativa {connectionAttempts}
                     </div>
                   )}
+                </div>
+              ) : status === 'disconnected' ? (
+                <div className="bg-dark-bg/50 border-2 border-dashed border-primary/30 rounded-2xl p-12 flex flex-col items-center justify-center gap-4">
+                  <svg className="w-20 h-20 text-primary/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <div className="text-center">
+                    <p className="text-white font-semibold mb-2">WhatsApp não conectado</p>
+                    <p className="text-muted text-sm mb-6">Clique no botão abaixo para iniciar a conexão</p>
+                    <button
+                      onClick={handleStartConnection}
+                      disabled={isConnecting}
+                      className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-white font-semibold px-8 py-3 rounded-xl transition-all shadow-lg hover:shadow-primary/50 flex items-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isConnecting ? (
+                        <>
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          Conectando...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                          Conectar WhatsApp
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="bg-dark-bg/50 border-2 border-dashed border-primary/30 rounded-2xl p-12 flex flex-col items-center justify-center">
