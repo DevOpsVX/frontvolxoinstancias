@@ -20,6 +20,7 @@ export default function Instance() {
   const [isConnecting, setIsConnecting] = useState(false);
   const pollingIntervalRef = useRef(null);
   const [qrReceived, setQrReceived] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     // Fetch the instance info from the backend to display its name and
@@ -56,6 +57,10 @@ export default function Instance() {
           setStatus('connecting');
         } else if (msg.data === 'disconnected') {
           setStatus('disconnected');
+          // Captura mensagem de erro do backend
+          if (msg.message) {
+            setErrorMessage(msg.message);
+          }
         }
       } else if (msg.type === 'error') {
         console.error('WebSocket error:', msg.data);
@@ -431,10 +436,23 @@ export default function Instance() {
                     </div>
                   )}
                   {status === 'disconnected' && (
-                    <div className="mt-4 bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-3 text-center">
+                    <div className="mt-4 bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4 text-center space-y-3">
                       <p className="text-yellow-400 text-sm">
-                        ⚠️ Conexão perdida. O QR Code ainda é válido, tente escanear novamente.
+                        ⚠️ {errorMessage || 'Conexão perdida. O QR Code ainda é válido, tente escanear novamente.'}
                       </p>
+                      <button
+                        onClick={() => {
+                          setQr(null);
+                          setErrorMessage('');
+                          handleStartConnection();
+                        }}
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-6 py-2 rounded-lg transition-colors flex items-center gap-2 mx-auto"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Tentar Novamente
+                      </button>
                     </div>
                   )}
                 </div>
