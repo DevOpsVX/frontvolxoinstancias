@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { connectSocket, getInstanceDetails, updateInstanceName, disconnectInstance, reconnectInstance } from '../api.js';
 
@@ -18,7 +18,8 @@ export default function Instance() {
   const [showManageMenu, setShowManageMenu] = useState(false);
   const [wsConnection, setWsConnection] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [pollingInterval, setPollingInterval] = useState(null);
+  const pollingIntervalRef = useRef(null);
+  const [qrReceived, setQrReceived] = useState(false);
 
   useEffect(() => {
     // Fetch the instance info from the backend to display its name and
@@ -66,11 +67,12 @@ export default function Instance() {
     return () => {
       ws.close();
       // Limpa polling interval ao desmontar componente
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
       }
     };
-  }, [id, pollingInterval]);
+  }, [id]);
 
   async function handleUpdateName() {
     if (!editedName.trim()) return;
@@ -103,15 +105,17 @@ export default function Instance() {
       const response = await fetch(`https://backendvolxoinstancias.onrender.com/api/instances/${id}/qr`);
       const data = await response.json();
       
-      if (data.qr_code) {
+      if (data.qr_code && !qrReceived) {
         console.log('[pollQrCode] QR Code recebido via HTTP! Length:', data.qr_code.length);
         setQr(data.qr_code);
+        setQrReceived(true);
         setConnectionAttempts((prev) => prev + 1);
         setIsConnecting(false);
         // Para o polling quando QR Code é recebido
-        if (pollingInterval) {
-          clearInterval(pollingInterval);
-          setPollingInterval(null);
+        if (pollingIntervalRef.current) {
+          console.log('[pollQrCode] Parando polling...');
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
         }
       }
     } catch (err) {
@@ -124,16 +128,24 @@ export default function Instance() {
     console.log('[handleStartConnection] wsConnection:', wsConnection);
     console.log('[handleStartConnection] readyState:', wsConnection?.readyState);
     
+    // Reseta flag de QR recebido
+    setQrReceived(false);
+    
+    // Para polling anterior se existir
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+    
     // Inicia polling HTTP para buscar QR Code
     console.log('[handleStartConnection] Iniciando polling HTTP para QR Code...');
-    const interval = setInterval(pollQrCode, 2000); // Polling a cada 2 segundos
-    setPollingInterval(interval);
+    pollingIntervalRef.current = setInterval(pollQrCode, 2000); // Polling a cada 2 segundos
     
     // Para o polling após 5 minutos (timeout)
     setTimeout(() => {
-      if (interval) {
-        clearInterval(interval);
-        setPollingInterval(null);
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
         setIsConnecting(false);
       }
     }, 5 * 60 * 1000);
