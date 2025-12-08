@@ -338,8 +338,15 @@ export default function Instance() {
                       Tentativa {connectionAttempts}
                     </div>
                   )}
+                  {status === 'disconnected' && (
+                    <div className="mt-4 bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-3 text-center">
+                      <p className="text-yellow-400 text-sm">
+                        ⚠️ Conexão perdida. O QR Code ainda é válido, tente escanear novamente.
+                      </p>
+                    </div>
+                  )}
                 </div>
-              ) : status === 'disconnected' ? (
+              ) : status === 'disconnected' && !qr ? (
                 <div className="bg-dark-bg/50 border-2 border-dashed border-primary/30 rounded-2xl p-12 flex flex-col items-center justify-center gap-4">
                   <svg className="w-20 h-20 text-primary/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
