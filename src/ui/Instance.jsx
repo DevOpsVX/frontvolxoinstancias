@@ -18,6 +18,7 @@ export default function Instance() {
   const [showManageMenu, setShowManageMenu] = useState(false);
   const [wsConnection, setWsConnection] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [pollingInterval, setPollingInterval] = useState(null);
 
   useEffect(() => {
     // Fetch the instance info from the backend to display its name and
@@ -64,8 +65,12 @@ export default function Instance() {
     setWsConnection(ws);
     return () => {
       ws.close();
+      // Limpa polling interval ao desmontar componente
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
     };
-  }, [id]);
+  }, [id, pollingInterval]);
 
   async function handleUpdateName() {
     if (!editedName.trim()) return;
@@ -92,10 +97,46 @@ export default function Instance() {
     }
   }
 
+  // Função para fazer polling HTTP do QR Code
+  async function pollQrCode() {
+    try {
+      const response = await fetch(`https://backendvolxoinstancias.onrender.com/api/instances/${id}/qr`);
+      const data = await response.json();
+      
+      if (data.qr_code) {
+        console.log('[pollQrCode] QR Code recebido via HTTP! Length:', data.qr_code.length);
+        setQr(data.qr_code);
+        setConnectionAttempts((prev) => prev + 1);
+        setIsConnecting(false);
+        // Para o polling quando QR Code é recebido
+        if (pollingInterval) {
+          clearInterval(pollingInterval);
+          setPollingInterval(null);
+        }
+      }
+    } catch (err) {
+      console.error('[pollQrCode] Erro ao buscar QR Code:', err);
+    }
+  }
+
   function handleStartConnection() {
     console.log('[handleStartConnection] Verificando WebSocket...');
     console.log('[handleStartConnection] wsConnection:', wsConnection);
     console.log('[handleStartConnection] readyState:', wsConnection?.readyState);
+    
+    // Inicia polling HTTP para buscar QR Code
+    console.log('[handleStartConnection] Iniciando polling HTTP para QR Code...');
+    const interval = setInterval(pollQrCode, 2000); // Polling a cada 2 segundos
+    setPollingInterval(interval);
+    
+    // Para o polling após 5 minutos (timeout)
+    setTimeout(() => {
+      if (interval) {
+        clearInterval(interval);
+        setPollingInterval(null);
+        setIsConnecting(false);
+      }
+    }, 5 * 60 * 1000);
     
     // Verifica se WebSocket está conectado (readyState 1 = OPEN)
     if (!wsConnection || wsConnection.readyState !== 1) {
