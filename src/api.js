@@ -54,3 +54,51 @@ export function connectSocket(instanceId, onMessage) {
   };
   return ws;
 }
+
+export async function getInstanceDetails(id) {
+  const res = await fetch(`${API_URL}/api/instances/${id}`);
+  if (!res.ok) {
+    throw new Error('Failed to get instance details');
+  }
+  return res.json();
+}
+
+export async function updateInstanceName(id, name) {
+  const res = await fetch(`${API_URL}/api/instances/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ instance_name: name }),
+  });
+  if (!res.ok) {
+    throw new Error('Failed to update instance name');
+  }
+  return res.json();
+}
+
+export async function disconnectInstance(id) {
+  const res = await fetch(`${API_URL}/api/instances/${id}/disconnect`, {
+    method: 'POST',
+  });
+  if (!res.ok) {
+    throw new Error('Failed to disconnect instance');
+  }
+  return res.json();
+}
+
+export async function reconnectInstance(id) {
+  const res = await fetch(`${API_URL}/api/instances/${id}/reconnect`, {
+    method: 'POST',
+  });
+  if (!res.ok) {
+    throw new Error('Failed to reconnect instance');
+  }
+  return res.json();
+}
+
+export async function getStats() {
+  const res = await fetch(`${API_URL}/api/stats`);
+  if (!res.ok) {
+    throw new Error('Failed to get stats');
+  }
+  return res.json();
+}
