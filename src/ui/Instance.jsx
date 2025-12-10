@@ -107,7 +107,8 @@ export default function Instance() {
   // Função para fazer polling HTTP do QR Code
   async function pollQrCode() {
     try {
-      const response = await fetch(`https://backendvolxoinstancias.onrender.com/api/instances/${id}/qr`);
+      const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '';
+      const response = await fetch(`${API_URL}/api/instances/${id}/qr`);
       const data = await response.json();
       
       if (data.qr_code && !qrReceived) {
