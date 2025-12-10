@@ -425,7 +425,7 @@ export default function Instance() {
                 <div className="relative">
                   <div className="bg-white p-6 rounded-2xl shadow-2xl">
                     <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}`}
+                      src={qr}
                       alt="QR Code"
                       className="w-72 h-72"
                     />
