@@ -59,7 +59,7 @@ export default function App() {
   const filteredItems = items.filter((i) => {
     const matchesSearch = 
       (i.instance_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (i.instanceId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (i.instance_id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (i.phone_number || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = 

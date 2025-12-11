@@ -22,21 +22,21 @@ export default function Instance() {
   const [qrReceived, setQrReceived] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  useEffect(() => {
-    // Fetch the instance info from the backend to display its name and
-    // connected phone number (if any).
-    async function fetchInstance() {
-      try {
-        const inst = await getInstanceDetails(id);
-        setInstance(inst);
-        setEditedName(inst.instance_name || inst.instanceId);
-        if (inst && inst.phone_number) {
-          setStatus('connected');
-        }
-      } catch (err) {
-        console.error(err);
+  // Move fetchInstance para fora do useEffect para ser acessível em todo o componente
+  const fetchInstance = async () => {
+    try {
+      const inst = await getInstanceDetails(id);
+      setInstance(inst);
+      setEditedName(inst.instance_name || inst.instance_id);
+      if (inst && inst.phone_number) {
+        setStatus('connected');
       }
+    } catch (err) {
+      console.error(err);
     }
+  };
+
+  useEffect(() => {
     fetchInstance();
 
     // Open WebSocket connection to receive QR and status messages.
