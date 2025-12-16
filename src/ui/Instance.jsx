@@ -43,7 +43,9 @@ export default function Instance() {
     const ws = connectSocket(id, (msg) => {
       console.log('[Instance] Mensagem recebida do WebSocket:', msg);
       if (msg.type === 'qr') {
+        console.log('[Instance] ========== QR CODE RECEBIDO VIA WEBSOCKET ==========');
         console.log('[Instance] QR Code recebido! Length:', msg.data?.length);
+        console.log('[Instance] Primeiros 50 caracteres:', msg.data?.substring(0, 50));
         setQr(msg.data);
         setConnectionAttempts((prev) => prev + 1);
         setIsConnecting(false);
@@ -112,7 +114,9 @@ export default function Instance() {
       const data = await response.json();
       
       if (data.qr_code && !qrReceived) {
+        console.log('[pollQrCode] ========== QR CODE RECEBIDO VIA HTTP ==========');
         console.log('[pollQrCode] QR Code recebido via HTTP! Length:', data.qr_code.length);
+        console.log('[pollQrCode] Primeiros 50 caracteres:', data.qr_code.substring(0, 50));
         setQr(data.qr_code);
         setQrReceived(true);
         setConnectionAttempts((prev) => prev + 1);
@@ -130,6 +134,9 @@ export default function Instance() {
   }
 
   function handleStartConnection() {
+    console.log('[handleStartConnection] ========== INICIANDO CONEXÃO ==========');
+    console.log('[handleStartConnection] Status atual:', status);
+    console.log('[handleStartConnection] QR atual:', qr ? 'Existe' : 'Null');
     console.log('[handleStartConnection] Verificando WebSocket...');
     console.log('[handleStartConnection] wsConnection:', wsConnection);
     console.log('[handleStartConnection] readyState:', wsConnection?.readyState);
@@ -200,7 +207,10 @@ export default function Instance() {
     setQr(null);
     
     // Envia comando para iniciar sessão
-    wsConnection.send(JSON.stringify({ type: 'start' }));
+    const startCommand = { type: 'start' };
+    console.log('[handleStartConnection] Enviando comando:', startCommand);
+    wsConnection.send(JSON.stringify(startCommand));
+    console.log('[handleStartConnection] Comando enviado com sucesso!');
   }
 
   async function handleReconnect() {
@@ -457,7 +467,7 @@ export default function Instance() {
                     </div>
                   )}
                 </div>
-              ) : status === 'disconnected' && !qr ? (
+              ) : (status === 'disconnected' || status === 'pending') && !qr ? (
                 <div className="bg-dark-bg/50 border-2 border-dashed border-primary/30 rounded-2xl p-12 flex flex-col items-center justify-center gap-4">
                   <svg className="w-20 h-20 text-primary/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
